@@ -26,7 +26,7 @@ export default function ChatApp() {
 
   // Load initial sessions
   useEffect(() => {
-    loadSessions()
+   void loadSessions()
   }, [])
 
   const loadSessions = async () => {
