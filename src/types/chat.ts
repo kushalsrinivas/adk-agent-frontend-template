@@ -20,3 +20,22 @@ export interface ChatState {
   messages: Message[]
   isLoading: boolean
 }
+
+export interface SendMessageRequest {
+  app_name: string
+  user_id: string
+  session_id: string
+  new_message: {
+    parts: Array<{ text: string }>
+    role: 'user'
+  }
+}
+
+export interface SendMessageResponse {
+  message?: string
+  content?: string
+  parts?: Array<{ text?: string }>
+  [key: string]: unknown
+}
+
+

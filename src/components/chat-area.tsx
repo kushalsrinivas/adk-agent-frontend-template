@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Message } from "~/types/chat";
+import { type Message } from "~/types/chat";
 import { ChatMessage } from "./chat-message";
 import { ChatInput } from "./chat-input";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -37,10 +37,10 @@ export function ChatArea({
           <div className="text-center">
             <MessageSquare size={48} className="mx-auto mb-4 text-gray-600" />
             <h2 className="mb-2 text-xl font-semibold text-gray-300">
-              {currentSessionTitle || "Start a conversation"}
+              {currentSessionTitle ?? "Start a conversation"}
             </h2>
             <p className="max-w-md text-gray-500">
-              Send a message to begin your chat. I'm here to help with any
+              Send a message to begin your chat. I&apos;m here to help with any
               questions you have.
             </p>
           </div>

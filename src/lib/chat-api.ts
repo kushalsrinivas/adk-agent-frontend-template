@@ -1,134 +1,112 @@
-import { ChatSession, Message } from '~/types/chat'
+import { type ChatSession, type Message, type SendMessageRequest, type SendMessageResponse } from '~/types/chat'
 
-// Placeholder function to create a new chat session
-export async function createNewSession(): Promise<ChatSession> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500))
-  
-  const newSession: ChatSession = {
-    id: `session_${Date.now()}`,
+const FASTAPI_BASE_URL: string = process.env.NEXT_PUBLIC_FASTAPI_BASE_URL ?? 'http://localhost:8000'
+const APP_NAME: string = process.env.NEXT_PUBLIC_APP_NAME ?? 'speaker'
+
+function generateSessionId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  // Fallback
+  return `session_${Date.now()}_${Math.random().toString(36).slice(2)}`
+}
+
+export async function createNewSession(userId: string): Promise<ChatSession> {
+  const sessionId = generateSessionId()
+
+  const response = await fetch(`${FASTAPI_BASE_URL}/apps/${encodeURIComponent(APP_NAME)}/users/${encodeURIComponent(userId)}/sessions/${encodeURIComponent(sessionId)}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({}),
+    })
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '')
+    throw new Error(`Failed to initialize session (${response.status}): ${errorText}`)
+  }
+
+  // Best-effort validation of response shape
+  try {
+    const data: unknown = await response.json()
+    const maybeRecord = (data ?? {}) as Record<string, unknown>
+    const returnedId = (typeof maybeRecord.id === 'string'
+      ? maybeRecord.id
+      : typeof maybeRecord.sessionId === 'string'
+        ? (maybeRecord.sessionId as string)
+        : undefined)
+    if (returnedId && returnedId !== sessionId) {
+      // Backend returned a different id than we generated; surface as error to avoid mismatch
+      throw new Error('Session id mismatch between client and server')
+    }
+  } catch {
+    // If body isn't JSON or shape differs, ignore; success is determined by HTTP 2xx
+  }
+
+  return {
+    id: sessionId,
     title: 'New Chat',
     timestamp: new Date(),
-    messageCount: 0
+    messageCount: 0,
   }
-  
-  return newSession
 }
 
-// Placeholder function to retrieve all chat sessions
 export async function getChatSessions(): Promise<ChatSession[]> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  
-  // Mock data
-  return [
-    {
-      id: 'session_1',
-      title: 'React Best Practices',
-      lastMessage: 'Thanks for the explanation!',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-      messageCount: 12
-    },
-    {
-      id: 'session_2',
-      title: 'TypeScript Help',
-      lastMessage: 'How do I define interfaces?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-      messageCount: 8
-    },
-    {
-      id: 'session_3',
-      title: 'API Design Discussion',
-      lastMessage: 'What about REST vs GraphQL?',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-      messageCount: 25
-    }
-  ]
-}
-
-// Placeholder function to get messages for a specific session
-export async function getSessionMessages(sessionId: string): Promise<Message[]> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 400))
-  
-  // Mock messages based on session
-  if (sessionId === 'session_1') {
-    return [
-      {
-        id: 'msg_1',
-        content: 'What are some React best practices I should follow?',
-        role: 'user',
-        timestamp: new Date(Date.now() - 1000 * 60 * 35)
-      },
-      {
-        id: 'msg_2',
-        content: `Here are some key React best practices:
-
-## Component Organization
-- Keep components small and focused
-- Use functional components with hooks
-- Separate logic from presentation
-
-## State Management
-- Use \`useState\` for local state
-- Consider \`useReducer\` for complex state
-- Lift state up when needed
-
-## Performance
-- Use \`React.memo\` for expensive components
-- Implement proper key props in lists
-- Avoid inline functions in render
-
-Would you like me to elaborate on any of these points?`,
-        role: 'assistant',
-        timestamp: new Date(Date.now() - 1000 * 60 * 34)
-      },
-      {
-        id: 'msg_3',
-        content: 'Thanks for the explanation!',
-        role: 'user',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30)
-      }
-    ]
-  }
-  
+  // No list endpoint specified yet; return empty for now
   return []
 }
 
-// Placeholder function to send a message
-export async function sendMessage(sessionId: string, content: string): Promise<Message> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  
-  // Return a mock AI response
-  const responses = [
-    "That's a great question! Let me help you with that.",
-    "I understand what you're looking for. Here's my take on it:",
-    "Interesting point! Here's what I think:",
-    "Let me break this down for you:",
-    "That's a common challenge. Here's how you can approach it:"
-  ]
-  
-  const randomResponse = responses[Math.floor(Math.random() * responses.length)]
-  
+export async function getSessionMessages(_sessionId: string): Promise<Message[]> {
+  // No history endpoint specified yet; return empty for now
+  return []
+}
+
+export async function sendMessage(userId: string, sessionId: string, content: string): Promise<Message> {
+  const payload: SendMessageRequest = {
+    app_name: APP_NAME,
+    user_id: userId,
+    session_id: sessionId,
+    new_message: {
+      parts: [{ text: content }],
+      role: 'user',
+    },
+  }
+
+  let text = ''
+  try {
+    const res = await fetch(`${FASTAPI_BASE_URL}/run`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    const data = (await res.json()) as unknown as SendMessageResponse
+    const fromMessage = typeof data.message === 'string' ? data.message : undefined
+    const fromContent = typeof data.content === 'string' ? data.content : undefined
+    const fromParts = Array.isArray(data.parts) && data.parts.length > 0 && typeof data.parts[0]?.text === 'string' ? data.parts[0]?.text : undefined
+    text = fromMessage ?? fromContent ?? fromParts ?? ''
+    if (!text) {
+      text = 'Received a response from the AI backend, but could not parse a text answer.'
+    }
+  } catch (error) {
+    text = `Backend error: ${error instanceof Error ? error.message : 'Unknown error'}`
+  }
+
   return {
     id: `msg_${Date.now()}`,
-    content: `${randomResponse}\n\n*This is a placeholder response from your backend.*`,
+    content: text,
     role: 'assistant',
-    timestamp: new Date()
+    timestamp: new Date(),
   }
 }
 
-// Placeholder function to delete a session
-export async function deleteSession(sessionId: string): Promise<void> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 300))
-  console.log(`Deleted session: ${sessionId}`)
+export async function deleteSession(_sessionId: string): Promise<void> {
+  // No delete endpoint specified yet
 }
 
-// Placeholder function to update session title
-export async function updateSessionTitle(sessionId: string, title: string): Promise<void> {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 200))
-  console.log(`Updated session ${sessionId} title to: ${title}`)
+export async function updateSessionTitle(_sessionId: string, _title: string): Promise<void> {
+  // No rename endpoint specified yet
 }

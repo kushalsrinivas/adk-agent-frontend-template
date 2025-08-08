@@ -8,9 +8,9 @@ export default async function Page() {
     redirect("/api/auth/signin");
   }
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex h-screen flex-col">
       <Header />
-      <ChatApp />
+      <ChatApp userId={session.user.id} />
     </div>
   );
 }
