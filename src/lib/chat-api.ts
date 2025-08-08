@@ -1,4 +1,4 @@
-import { type ChatSession, type Message, type SendMessageRequest } from '~/types/chat'
+import { type ChatSession, type Message, type SendMessageRequest, type ToolEvent } from '~/types/chat'
 
 // Backend response types (narrow, only what we use)
 interface BackendSessionListItem {
@@ -20,6 +20,7 @@ interface BackendFunctionResponsePart {
   id?: string
   name?: string
   response?: unknown
+  status?: string
 }
 
 interface BackendContentPart {
@@ -171,6 +172,36 @@ export async function getSessionMessages(userId: string, sessionId: string): Pro
     if (!detail || !Array.isArray(detail.events)) return []
 
     const messages: Message[] = []
+
+    const extractToolEventsFromParts = (parts: BackendContentPart[] | undefined): ToolEvent[] => {
+      const evs: ToolEvent[] = []
+      if (!Array.isArray(parts)) return evs
+      for (const p of parts) {
+        if (p && typeof p === 'object') {
+          const fc = p.functionCall
+          const fr = p.functionResponse
+          if (fc && typeof fc === 'object') {
+            evs.push({
+              kind: 'functionCall',
+              id: typeof fc.id === 'string' ? fc.id : undefined,
+              name: typeof fc.name === 'string' ? fc.name : undefined,
+              args: fc.args,
+            })
+          }
+          if (fr && typeof fr === 'object') {
+            evs.push({
+              kind: 'functionResponse',
+              id: typeof fr.id === 'string' ? fr.id : undefined,
+              name: typeof fr.name === 'string' ? fr.name : undefined,
+              response: fr.response,
+              status: typeof fr.status === 'string' ? fr.status : undefined,
+            })
+          }
+        }
+      }
+      return evs
+    }
+
     for (const evt of detail.events) {
       const contentObj = evt?.content
       const parts: BackendContentPart[] = Array.isArray(contentObj?.parts)
@@ -187,13 +218,15 @@ export async function getSessionMessages(userId: string, sessionId: string): Pro
         }
       }
       const content = texts.join('')
-      if (!content) continue
+
+      const toolEvents = extractToolEventsFromParts(parts)
+      if (!content && toolEvents.length === 0) continue
 
       const id: string = typeof evt?.id === 'string' ? evt.id : `${role}_${Math.random().toString(36).slice(2)}`
       const tsNum: number | undefined = typeof evt?.timestamp === 'number' ? evt.timestamp : undefined
       const timestamp = new Date((tsNum ?? Date.now() / 1000) * 1000)
 
-      messages.push({ id, content, role, timestamp })
+      messages.push({ id, content, role, timestamp, metadata: toolEvents.length ? { toolEvents } : undefined })
     }
 
     return messages
@@ -230,7 +263,7 @@ export async function sendMessage(userId: string, sessionId: string, content: st
     }
 
     const raw: unknown = await res.json()
-    console.log("raw : ",raw)
+    console.log("raw : ", raw)
 
     // Narrowing helpers
     const isRecord = (val: unknown): val is Record<string, unknown> =>
@@ -284,13 +317,68 @@ export async function sendMessage(userId: string, sessionId: string, content: st
       return ''
     }
 
+    const extractToolEvents = (data: unknown): ToolEvent[] => {
+      const toolEvents: ToolEvent[] = []
+      const isRecord = (val: unknown): val is Record<string, unknown> => typeof val === 'object' && val !== null
+
+      const maybePushFromParts = (parts: unknown) => {
+        if (!Array.isArray(parts)) return
+        for (const part of parts) {
+          if (!isRecord(part)) continue
+          const fc = (part as { functionCall?: BackendFunctionCallPart }).functionCall
+          const fr = (part as { functionResponse?: BackendFunctionResponsePart }).functionResponse
+          if (isRecord(fc)) {
+            toolEvents.push({
+              kind: 'functionCall',
+              id: typeof fc.id === 'string' ? fc.id : undefined,
+              name: typeof fc.name === 'string' ? fc.name : undefined,
+              args: fc.args,
+            })
+          }
+          if (isRecord(fr)) {
+            toolEvents.push({
+              kind: 'functionResponse',
+              id: typeof fr.id === 'string' ? fr.id : undefined,
+              name: typeof fr.name === 'string' ? fr.name : undefined,
+              response: fr.response,
+              status: typeof fr.status === 'string' ? fr.status : undefined,
+            })
+          }
+        }
+      }
+
+      // Case A: Array of events
+      if (Array.isArray(data)) {
+        for (const item of data) {
+          if (!isRecord(item)) continue
+          const contentVal = item.content
+          if (isRecord(contentVal)) {
+            maybePushFromParts(contentVal.parts)
+          }
+          // Some providers might place functionResponse at top-level parts
+          maybePushFromParts((item as { parts?: BackendContentPart[] }).parts)
+        }
+      } else if (isRecord(data)) {
+        // Case B: Single object
+        const contentVal = data.content
+        if (isRecord(contentVal)) {
+          maybePushFromParts(contentVal.parts)
+        }
+        maybePushFromParts((data as { parts?: BackendContentPart[] }).parts)
+      }
+
+      return toolEvents
+    }
+
     const assistantText = extractTextFromRunResponse(raw)
+    const toolEvents = extractToolEvents(raw)
 
     return {
       id: `assistant_${Date.now()}`,
       content: assistantText || '[empty response] ',
       role: 'assistant',
       timestamp: new Date(),
+      metadata: toolEvents.length > 0 ? { toolEvents } : undefined,
     }
   } catch (error) {
     console.error('Error sending message:', error)

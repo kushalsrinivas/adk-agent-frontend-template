@@ -1,9 +1,21 @@
+export interface ToolEvent {
+  kind: 'functionCall' | 'functionResponse'
+  id?: string
+  name?: string
+  args?: unknown
+  response?: unknown
+  status?: string
+}
+
 export interface Message {
   id: string
   content: string
   role: 'user' | 'assistant'
   timestamp: Date
   isStreaming?: boolean
+  metadata?: {
+    toolEvents?: ToolEvent[]
+  }
 }
 
 export interface ChatSession {
