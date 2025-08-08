@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { type Message, type ChatState } from "~/types/chat";
+import { type Message, type ChatState, type ChatSession } from "~/types/chat";
 import { ChatSessionsSidebar } from "~/components/chat-sessions-sidebar";
 import { ChatArea } from "~/components/chat-area";
 import { Button } from "~/components/ui/button";
@@ -27,18 +27,19 @@ export default function ChatApp({ userId }: { userId: string }) {
   // Load initial sessions
   useEffect(() => {
     void loadSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadSessions = async () => {
     try {
-      const sessions = await getChatSessions();
+      const sessions = await getChatSessions(userId);
       setState((prev) => ({ ...prev, sessions }));
     } catch (error) {
       console.error("Failed to load sessions:", error);
     }
   };
 
-  const handleCreateSession = async () => {
+  const handleCreateSession = async (): Promise<ChatSession> => {
     try {
       setState((prev) => ({ ...prev, isLoading: true }));
       const newSession = await createNewSession(userId);
@@ -50,9 +51,11 @@ export default function ChatApp({ userId }: { userId: string }) {
         isLoading: false,
       }));
       setSidebarOpen(false);
+      return newSession;
     } catch (error) {
       console.error("Failed to create session:", error);
       setState((prev) => ({ ...prev, isLoading: false }));
+      throw error;
     }
   };
 
@@ -61,7 +64,7 @@ export default function ChatApp({ userId }: { userId: string }) {
 
     try {
       setState((prev) => ({ ...prev, isLoading: true }));
-      const messages = await getSessionMessages(sessionId);
+      const messages = await getSessionMessages(userId, sessionId);
       setState((prev) => ({
         ...prev,
         currentSessionId: sessionId,
@@ -77,11 +80,13 @@ export default function ChatApp({ userId }: { userId: string }) {
 
   const handleSendMessage = async (content: string) => {
     // Ensure session exists before sending
-    if (!state.currentSessionId) {
+    let sessionIdToUse = state.currentSessionId;
+    if (!sessionIdToUse) {
       try {
-        await handleCreateSession();
+        const created = await handleCreateSession();
+        sessionIdToUse = created.id;
       } catch (e) {
-        console.error('Cannot create session before sending message', e)
+        console.error("Cannot create session before sending message", e);
         return;
       }
     }
@@ -102,7 +107,6 @@ export default function ChatApp({ userId }: { userId: string }) {
       }));
 
       // Send message and get AI response
-      const sessionIdToUse = state.currentSessionId!;
       const aiResponse = await sendMessage(userId, sessionIdToUse, content);
 
       setState((prev) => ({
