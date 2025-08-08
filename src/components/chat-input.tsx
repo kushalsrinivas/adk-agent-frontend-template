@@ -1,52 +1,52 @@
-'use client'
+"use client";
 
-import { useState, useRef, useEffect } from 'react'
-import { Button } from '~/components/ui/button'
-import { Textarea } from '~/components/ui/textarea'
-import { Send, Square } from 'lucide-react'
+import { useState, useRef, useEffect } from "react";
+import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
+import { Send, Square } from "lucide-react";
 
 interface ChatInputProps {
-  onSendMessage: (content: string) => void
-  isLoading: boolean
-  onStop?: () => void
-  placeholder?: string
+  onSendMessage: (content: string) => void;
+  isLoading: boolean;
+  onStop?: () => void;
+  placeholder?: string;
 }
 
-export function ChatInput({ 
-  onSendMessage, 
-  isLoading, 
-  onStop, 
-  placeholder = "Type your message..." 
+export function ChatInput({
+  onSendMessage,
+  isLoading,
+  onStop,
+  placeholder = "Type your message...",
 }: ChatInputProps) {
-  const [input, setInput] = useState('')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [input, setInput] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (input.trim() && !isLoading) {
-      onSendMessage(input.trim())
-      setInput('')
+      onSendMessage(input.trim());
+      setInput("");
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit(e)
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
     }
-  }
+  };
 
   // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
-  }, [input])
+  }, [input]);
 
   return (
-    <div className="border-t border-gray-800 bg-gray-900 p-4">
-      <form onSubmit={handleSubmit} className="flex gap-3 items-end">
+    <div className="border-t border-white/10 bg-white/5 p-4 backdrop-blur">
+      <form onSubmit={handleSubmit} className="flex items-end gap-3">
         <div className="flex-1">
           <Textarea
             ref={textareaRef}
@@ -54,18 +54,18 @@ export function ChatInput({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="min-h-[44px] max-h-32 resize-none bg-gray-800 border-gray-700 text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-blue-500"
+            className="max-h-32 min-h-[44px] resize-none border-white/10 bg-white/5 text-white backdrop-blur placeholder:text-white/40 focus:border-white/20 focus:ring-0"
             disabled={isLoading}
           />
         </div>
-        
+
         {isLoading ? (
           <Button
             type="button"
             onClick={onStop}
             size="sm"
             variant="outline"
-            className="h-11 px-3 border-gray-700 text-gray-300 hover:bg-gray-800"
+            className="h-11 border-white/10 px-3 text-white hover:bg-white/10"
           >
             <Square size={16} />
           </Button>
@@ -74,12 +74,12 @@ export function ChatInput({
             type="submit"
             size="sm"
             disabled={!input.trim()}
-            className="h-11 px-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            className="h-11 bg-white/20 px-3 text-white hover:bg-white/30 disabled:opacity-50"
           >
             <Send size={16} />
           </Button>
         )}
       </form>
     </div>
-  )
+  );
 }

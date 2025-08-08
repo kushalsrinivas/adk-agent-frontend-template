@@ -75,13 +75,13 @@ export function ChatSessionsSidebar({
   };
 
   return (
-    <div className="flex h-full w-80 flex-col border-r border-gray-800 bg-gray-950">
+    <div className="flex h-full w-80 flex-col border-r border-white/10 bg-white/5 backdrop-blur">
       {/* Header */}
-      <div className="border-b border-gray-800 p-4">
+      <div className="border-b border-white/10 p-4">
         <Button
           onClick={onCreateSession}
           disabled={isLoading}
-          className="w-full bg-blue-600 text-white hover:bg-blue-700"
+          className="w-full border border-white/10 bg-white/10 text-white hover:bg-white/20"
         >
           <Plus size={16} className="mr-2" />
           New Chat
@@ -89,17 +89,17 @@ export function ChatSessionsSidebar({
       </div>
 
       {/* Search */}
-      <div className="border-b border-gray-800 p-4">
+      <div className="border-b border-white/10 p-4">
         <div className="relative">
           <Search
             size={16}
-            className="absolute top-1/2 left-3 -translate-y-1/2 transform text-gray-500"
+            className="absolute top-1/2 left-3 -translate-y-1/2 transform text-white/50"
           />
           <Input
             placeholder="Search chats..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="border-gray-700 bg-gray-800 pl-10 text-gray-100 placeholder-gray-500"
+            className="border-white/10 bg-white/5 pl-10 text-white placeholder:text-white/40"
           />
         </div>
       </div>
@@ -108,7 +108,7 @@ export function ChatSessionsSidebar({
       <ScrollArea className="flex-1">
         <div className="p-2">
           {filteredSessions.length === 0 ? (
-            <div className="py-8 text-center text-gray-500">
+            <div className="py-8 text-center text-white/50">
               <MessageSquare size={32} className="mx-auto mb-2 opacity-50" />
               <p className="text-sm">No chats found</p>
             </div>
@@ -118,8 +118,8 @@ export function ChatSessionsSidebar({
                 key={session.id}
                 className={`group relative mb-1 cursor-pointer rounded-lg p-3 transition-colors ${
                   currentSessionId === session.id
-                    ? "border border-gray-700 bg-gray-800"
-                    : "hover:bg-gray-900"
+                    ? "border border-white/10 bg-white/10"
+                    : "hover:bg-white/5"
                 }`}
                 onClick={() => onSelectSession(session.id)}
               >
@@ -134,23 +134,23 @@ export function ChatSessionsSidebar({
                           if (e.key === "Enter") handleSaveRename(session.id);
                           if (e.key === "Escape") setEditingId(null);
                         }}
-                        className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm font-medium text-gray-100 focus:border-blue-500 focus:outline-none"
+                        className="w-full rounded border border-white/20 bg-white/10 px-2 py-1 text-sm font-medium text-white focus:border-white/30 focus:outline-none"
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <h3 className="truncate text-sm font-medium text-gray-200">
+                      <h3 className="truncate text-sm font-medium text-white">
                         {session.title}
                       </h3>
                     )}
 
                     {session.lastMessage && (
-                      <p className="mt-1 truncate text-xs text-gray-500">
+                      <p className="mt-1 truncate text-xs text-white/60">
                         {session.lastMessage}
                       </p>
                     )}
 
-                    <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+                    <div className="mt-2 flex items-center gap-2 text-xs text-white/50">
                       <span>{formatRelativeTime(session.timestamp)}</span>
                       <span>•</span>
                       <span>{session.messageCount} messages</span>
@@ -162,7 +162,7 @@ export function ChatSessionsSidebar({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 text-gray-500 opacity-0 group-hover:opacity-100 hover:text-gray-300"
+                        className="h-8 w-8 p-0 text-white/60 opacity-0 group-hover:opacity-100 hover:text-white"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreHorizontal size={14} />
@@ -170,14 +170,14 @@ export function ChatSessionsSidebar({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
-                      className="border-gray-700 bg-gray-800"
+                      className="border-white/10 bg-white/10 backdrop-blur"
                     >
                       <DropdownMenuItem
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRename(session.id, session.title);
                         }}
-                        className="text-gray-300 hover:bg-gray-700"
+                        className="text-white hover:bg-white/10"
                       >
                         <Edit3 size={14} className="mr-2" />
                         Rename
@@ -187,7 +187,7 @@ export function ChatSessionsSidebar({
                           e.stopPropagation();
                           onDeleteSession(session.id);
                         }}
-                        className="text-red-400 hover:bg-gray-700"
+                        className="text-red-300 hover:bg-white/10"
                       >
                         <Trash2 size={14} className="mr-2" />
                         Delete

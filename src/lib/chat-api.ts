@@ -230,6 +230,7 @@ export async function sendMessage(userId: string, sessionId: string, content: st
     }
 
     const raw: unknown = await res.json()
+    console.log("raw : ",raw)
 
     // Narrowing helpers
     const isRecord = (val: unknown): val is Record<string, unknown> =>

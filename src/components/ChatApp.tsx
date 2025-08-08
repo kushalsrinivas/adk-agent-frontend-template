@@ -14,6 +14,7 @@ import {
   deleteSession,
   updateSessionTitle,
 } from "~/lib/chat-api";
+import LandingHero from "~/components/landing-hero";
 
 export default function ChatApp({ userId }: { userId: string }) {
   const [state, setState] = useState<ChatState>({
@@ -167,10 +168,13 @@ export default function ChatApp({ userId }: { userId: string }) {
     (s) => s.id === state.currentSessionId,
   );
 
+  const showLanding =
+    state.currentSessionId === null && state.messages.length === 0;
+
   return (
-    <div className="flex h-screen bg-black text-white">
+    <div className="flex h-screen bg-transparent text-white">
       {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
+      {sidebarOpen && !showLanding && (
         <div
           className="bg-opacity-50 fixed inset-0 z-40 bg-black lg:hidden"
           onClick={() => setSidebarOpen(false)}
@@ -178,45 +182,51 @@ export default function ChatApp({ userId }: { userId: string }) {
       )}
 
       {/* Sidebar */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 transform lg:relative lg:z-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-200 ease-in-out lg:translate-x-0`}
-      >
-        <ChatSessionsSidebar
-          sessions={state.sessions}
-          currentSessionId={state.currentSessionId}
-          onSelectSession={handleSelectSession}
-          onCreateSession={handleCreateSession}
-          onDeleteSession={handleDeleteSession}
-          onRenameSession={handleRenameSession}
-          isLoading={state.isLoading}
-        />
-      </div>
+      {!showLanding && (
+        <div
+          className={`fixed inset-y-0 left-0 z-50 transform lg:relative lg:z-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} transition-transform duration-200 ease-in-out lg:translate-x-0`}
+        >
+          <ChatSessionsSidebar
+            sessions={state.sessions}
+            currentSessionId={state.currentSessionId}
+            onSelectSession={handleSelectSession}
+            onCreateSession={handleCreateSession}
+            onDeleteSession={handleDeleteSession}
+            onRenameSession={handleRenameSession}
+            isLoading={state.isLoading}
+          />
+        </div>
+      )}
 
       {/* Main content */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="relative flex min-w-0 flex-1 flex-col">
         {/* Mobile header */}
-        <div className="flex items-center justify-between border-b border-gray-800 bg-gray-950 p-4 lg:hidden">
+        <div className="flex items-center justify-between border-b border-white/10 bg-white/5 p-4 backdrop-blur lg:hidden">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-gray-400 hover:text-gray-200"
+            className="text-gray-300 hover:text-white"
           >
             {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </Button>
-          <h1 className="truncate text-lg font-semibold text-gray-200">
+          <h1 className="truncate text-lg font-semibold text-white">
             {currentSession?.title ?? "AI Chat"}
           </h1>
           <div className="w-8" /> {/* Spacer for centering */}
         </div>
 
-        {/* Chat area */}
-        <ChatArea
-          messages={state.messages}
-          onSendMessage={handleSendMessage}
-          isLoading={state.isLoading}
-          currentSessionTitle={currentSession?.title}
-        />
+        {/* Landing vs Chat */}
+        {showLanding ? (
+          <LandingHero onSubmit={handleSendMessage} />
+        ) : (
+          <ChatArea
+            messages={state.messages}
+            onSendMessage={handleSendMessage}
+            isLoading={state.isLoading}
+            currentSessionTitle={currentSession?.title}
+          />
+        )}
       </div>
     </div>
   );

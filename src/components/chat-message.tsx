@@ -26,11 +26,17 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
   return (
     <div
-      className={`flex gap-3 p-4 ${isUser ? "bg-gray-900" : "bg-gray-950"} group hover:bg-opacity-80 transition-colors`}
+      className={`group flex gap-3 p-4 transition-colors ${
+        isUser
+          ? "border-b border-white/5 bg-white/5 hover:bg-white/10"
+          : "border-b border-white/5 bg-white/5 hover:bg-white/10"
+      }`}
     >
       <div
-        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${
-          isUser ? "bg-blue-600" : "bg-gray-700"
+        className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full shadow-inner ${
+          isUser
+            ? "bg-gradient-to-br from-cyan-500 to-blue-600"
+            : "bg-gradient-to-br from-zinc-700 to-zinc-800"
         }`}
       >
         {isUser ? <User size={16} /> : <Bot size={16} />}
@@ -38,15 +44,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-200">
+          <span className="text-sm font-medium text-white">
             {isUser ? "You" : "Assistant"}
           </span>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-white/60">
             {formatTime(message.timestamp)}
           </span>
         </div>
 
-        <div className="text-gray-300">
+        <div className="text-white/90">
           {isUser ? (
             <p className="whitespace-pre-wrap">{message.content}</p>
           ) : (
@@ -67,7 +73,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
           variant="ghost"
           size="sm"
           onClick={copyToClipboard}
-          className="h-8 w-8 p-0 text-gray-500 hover:text-gray-300"
+          className="h-8 w-8 p-0 text-white/60 hover:text-white"
         >
           {copied ? <Check size={14} /> : <Copy size={14} />}
         </Button>

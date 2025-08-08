@@ -20,8 +20,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable}`}>
-      <body>
+    <html lang="en" className={`${geist.variable} dark`}>
+      <body className="antialiased">
         <TRPCReactProvider>
           <SessionProvider>{children}</SessionProvider>
         </TRPCReactProvider>

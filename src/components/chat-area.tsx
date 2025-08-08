@@ -32,14 +32,14 @@ export function ChatArea({
 
   if (messages.length === 0) {
     return (
-      <div className="flex h-screen flex-col overflow-scroll bg-gray-900">
+      <div className="flex h-screen flex-col overflow-hidden bg-transparent">
         <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
-            <MessageSquare size={48} className="mx-auto mb-4 text-gray-600" />
-            <h2 className="mb-2 text-xl font-semibold text-gray-300">
+            <MessageSquare size={48} className="mx-auto mb-4 text-white/50" />
+            <h2 className="mb-2 text-xl font-semibold text-white/90">
               {currentSessionTitle ?? "Start a conversation"}
             </h2>
-            <p className="max-w-md text-gray-500">
+            <p className="mx-auto max-w-md text-white/60">
               Send a message to begin your chat. I&apos;m here to help with any
               questions you have.
             </p>
@@ -56,11 +56,11 @@ export function ChatArea({
   }
 
   return (
-    <div className="flex h-full flex-col bg-gray-900">
+    <div className="flex h-full flex-col bg-transparent">
       {/* Chat Header */}
       {currentSessionTitle && (
-        <div className="border-b border-gray-800 bg-gray-950 p-4">
-          <h1 className="truncate text-lg font-semibold text-gray-200">
+        <div className="border-b border-white/10 bg-white/5 p-4 backdrop-blur">
+          <h1 className="truncate text-lg font-semibold text-white">
             {currentSessionTitle}
           </h1>
         </div>
@@ -68,10 +68,22 @@ export function ChatArea({
 
       {/* Messages */}
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
-        <div className="divide-y divide-gray-800">
+        <div className="divide-y divide-white/5">
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
+          {isLoading && (
+            <ChatMessage
+              key="assistant_loading"
+              message={{
+                id: "assistant_loading",
+                content: "",
+                role: "assistant",
+                timestamp: new Date(),
+                isStreaming: true,
+              }}
+            />
+          )}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
